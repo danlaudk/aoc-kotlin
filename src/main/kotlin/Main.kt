@@ -1,7 +1,9 @@
 import dayOne.dayOne
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 
-fun main(args: Array<String>) {
+@ExperimentalCoroutinesApi
+@FlowPreview
+fun main() {
     runBlocking {
         dayOne()
     }
