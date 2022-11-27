@@ -1,6 +1,6 @@
 package dayOne
 
-import arrow.fx.coroutines.parMap
+import arrow.fx.coroutines.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.Random
@@ -29,10 +29,10 @@ suspend fun strictlyIncreasing(xs: List<String>) = run {
 @FlowPreview
 @ExperimentalCoroutinesApi
 suspend fun dayOne2021() = coroutineScope {
-    val path = Path("inputFiles/dayOne.test.txt")
+    val path = Path("inputFiles/dayOne2021.test.txt")
     val result =
         windows(2, path)
-            .parMap { strictlyIncreasing(it) }
+            .parMapUnordered { strictlyIncreasing(it) }
             .fold(0) { acc, x -> acc + x }
     println("The final result is $result")
 }
