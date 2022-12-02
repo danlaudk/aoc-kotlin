@@ -1,6 +1,7 @@
 import dayOne.dayOne2021
 import dayTen.dayTen2021
 import dayOne.dayOne2022
+import dayTwo.dayTwo2022
 
 import kotlinx.coroutines.*
 
@@ -8,6 +9,6 @@ import kotlinx.coroutines.*
 @FlowPreview
 fun main() {
     runBlocking {
-        dayOne2022()
+        dayTwo2022()
     }
 }
