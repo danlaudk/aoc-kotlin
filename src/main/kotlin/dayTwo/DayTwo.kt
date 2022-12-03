@@ -2,8 +2,6 @@ package dayTwo
 
 import arrow.fx.coroutines.parMapUnordered
 import cc.ekblad.konbini.*
-import com.sun.net.httpserver.Authenticator.Failure
-import com.sun.net.httpserver.Authenticator.Success
 import flows.lines
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -38,10 +36,12 @@ val scissorsParser = parser {
     RockPaperScissors.SCISSORS
 }
 
+val rockPaperScissorsParser = oneOf(rockParser, paperParser, scissorsParser)
+
 val parseGame = parser {
-    val first = oneOf(rockParser, paperParser, scissorsParser)
+    val first = rockPaperScissorsParser()
     whitespace()
-    val second = oneOf(rockParser, paperParser, scissorsParser)
+    val second = rockPaperScissorsParser()
     Pair(first, second)
 }
 
@@ -61,10 +61,10 @@ val winParser = parser {
 }
 
 val parseGamePartTwo = parser {
-    val first = oneOf(rockParser, paperParser, scissorsParser)
+    val first = rockPaperScissorsParser()
     whitespace()
     val second = oneOf(winParser, lossParser, drawParser)
-    Pair(first, second)
+    first to second
 }
 
 fun scorePlay(rockPaperScissors: RockPaperScissors) = when (rockPaperScissors) {
@@ -80,34 +80,34 @@ fun scoreResult(winDrawLoss: WinDrawLoss) = when (winDrawLoss) {
 }
 
 fun determineResult(p: Pair<RockPaperScissors, RockPaperScissors>): WinDrawLoss = when (p) {
-    Pair(RockPaperScissors.ROCK, RockPaperScissors.ROCK) -> WinDrawLoss.DRAW
-    Pair(RockPaperScissors.PAPER, RockPaperScissors.PAPER) -> WinDrawLoss.DRAW
-    Pair(RockPaperScissors.SCISSORS, RockPaperScissors.SCISSORS) -> WinDrawLoss.DRAW
+    RockPaperScissors.ROCK to RockPaperScissors.ROCK -> WinDrawLoss.DRAW
+    RockPaperScissors.PAPER to RockPaperScissors.PAPER -> WinDrawLoss.DRAW
+    RockPaperScissors.SCISSORS to RockPaperScissors.SCISSORS -> WinDrawLoss.DRAW
 
-    Pair(RockPaperScissors.ROCK, RockPaperScissors.PAPER) -> WinDrawLoss.WIN
-    Pair(RockPaperScissors.ROCK, RockPaperScissors.SCISSORS) -> WinDrawLoss.LOSS
+    RockPaperScissors.ROCK to RockPaperScissors.PAPER -> WinDrawLoss.WIN
+    RockPaperScissors.ROCK to RockPaperScissors.SCISSORS -> WinDrawLoss.LOSS
 
-    Pair(RockPaperScissors.PAPER, RockPaperScissors.ROCK) -> WinDrawLoss.LOSS
-    Pair(RockPaperScissors.PAPER, RockPaperScissors.SCISSORS) -> WinDrawLoss.WIN
+    RockPaperScissors.PAPER to RockPaperScissors.ROCK -> WinDrawLoss.LOSS
+    RockPaperScissors.PAPER to RockPaperScissors.SCISSORS -> WinDrawLoss.WIN
 
-    Pair(RockPaperScissors.SCISSORS, RockPaperScissors.ROCK) -> WinDrawLoss.WIN
-    Pair(RockPaperScissors.SCISSORS, RockPaperScissors.PAPER) -> WinDrawLoss.LOSS
+    RockPaperScissors.SCISSORS to RockPaperScissors.ROCK -> WinDrawLoss.WIN
+    RockPaperScissors.SCISSORS to RockPaperScissors.PAPER -> WinDrawLoss.LOSS
 
     else -> error("impossible")
 }
 
 fun determinePlay(p: Pair<RockPaperScissors, WinDrawLoss>) = when (p) {
-    Pair(RockPaperScissors.ROCK, WinDrawLoss.WIN) -> RockPaperScissors.PAPER
-    Pair(RockPaperScissors.ROCK, WinDrawLoss.LOSS) -> RockPaperScissors.SCISSORS
-    Pair(RockPaperScissors.ROCK, WinDrawLoss.DRAW) -> RockPaperScissors.ROCK
+    RockPaperScissors.ROCK to WinDrawLoss.WIN -> RockPaperScissors.PAPER
+    RockPaperScissors.ROCK to WinDrawLoss.LOSS -> RockPaperScissors.SCISSORS
+    RockPaperScissors.ROCK to WinDrawLoss.DRAW -> RockPaperScissors.ROCK
 
-    Pair(RockPaperScissors.PAPER, WinDrawLoss.WIN) -> RockPaperScissors.SCISSORS
-    Pair(RockPaperScissors.PAPER, WinDrawLoss.LOSS) -> RockPaperScissors.ROCK
-    Pair(RockPaperScissors.PAPER, WinDrawLoss.DRAW) -> RockPaperScissors.PAPER
+    RockPaperScissors.PAPER to WinDrawLoss.WIN -> RockPaperScissors.SCISSORS
+    RockPaperScissors.PAPER to WinDrawLoss.LOSS -> RockPaperScissors.ROCK
+    RockPaperScissors.PAPER to WinDrawLoss.DRAW -> RockPaperScissors.PAPER
 
-    Pair(RockPaperScissors.SCISSORS, WinDrawLoss.WIN) -> RockPaperScissors.ROCK
-    Pair(RockPaperScissors.SCISSORS, WinDrawLoss.LOSS) -> RockPaperScissors.PAPER
-    Pair(RockPaperScissors.SCISSORS, WinDrawLoss.DRAW) -> RockPaperScissors.SCISSORS
+    RockPaperScissors.SCISSORS to WinDrawLoss.WIN -> RockPaperScissors.ROCK
+    RockPaperScissors.SCISSORS to WinDrawLoss.LOSS -> RockPaperScissors.PAPER
+    RockPaperScissors.SCISSORS to WinDrawLoss.DRAW -> RockPaperScissors.SCISSORS
 
     else -> error("impossible")
 }
@@ -116,7 +116,7 @@ fun scoreGame(p: Pair<RockPaperScissors, RockPaperScissors>) =
     scorePlay(p.second) + scoreResult(determineResult(p))
 
 fun scorePartTwo(p: Pair<RockPaperScissors, WinDrawLoss>) = run {
-    val game = Pair(p.first, determinePlay(p))
+    val game = p.first to determinePlay(p)
     scoreGame(game)
 }
 
