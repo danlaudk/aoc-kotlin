@@ -126,19 +126,23 @@ suspend fun dayTwo2022() = coroutineScope {
     val path = Path("inputFiles/dayTwo2022.txt")
     val totalScorePartOne = lines(path)
         .parMapUnordered { parseGame.parse(it) }
-        .parMapUnordered { r -> when (r) {
-            is ParserResult.Ok -> scoreGame(r.result)
-            is ParserResult.Error -> throw Error("Unable to parse game $r")
-        }}
+        .parMapUnordered { r ->
+            when (r) {
+                is ParserResult.Ok -> scoreGame(r.result)
+                is ParserResult.Error -> throw Error("Unable to parse game $r")
+            }
+        }
         .fold(0) { acc, x -> acc + x }
     println("The part one score is: $totalScorePartOne")
 
     val totalScorePartTwo = lines(path)
         .parMapUnordered { parseGamePartTwo.parse(it) }
-        .parMapUnordered { r -> when (r) {
-            is ParserResult.Ok -> scorePartTwo(r.result)
-            is ParserResult.Error -> throw Error("Unable to parse game $r")
-        }}
+        .parMapUnordered { r ->
+            when (r) {
+                is ParserResult.Ok -> scorePartTwo(r.result)
+                is ParserResult.Error -> throw Error("Unable to parse game $r")
+            }
+        }
         .fold(0) { acc, x -> acc + x }
     println("The part two score is: $totalScorePartTwo")
 }
