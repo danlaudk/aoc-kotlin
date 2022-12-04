@@ -3,6 +3,7 @@ package dayThree
 import arrow.fx.coroutines.parMapUnordered
 import flows.lines
 import flows.windows
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.fold
 import kotlin.io.path.Path
 
@@ -38,6 +39,7 @@ fun elfGroupBadge(xs: List<String>): Set<Char> = run {
     }
 }
 
+@FlowPreview
 suspend fun dayThree() {
     val path = Path("inputFiles/dayThree.txt")
     val resultPartOne =
