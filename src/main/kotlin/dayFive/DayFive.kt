@@ -110,6 +110,7 @@ fun foldInputLine(stack: Stacks, inputLine: InputLine) =
                 val prepended: List<Char> = acc[idx]?.let { listOf(c) + it } ?: listOf(c)
                 acc + (idx to prepended)
             }
+
             else -> acc
         }
     }
