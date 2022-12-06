@@ -19,7 +19,7 @@ fun produceSets(path: Path, windowSize: Int = 4) = flow {
         for (idx in firstLine.indices) {
             val endIdx = idx + windowSize
             if (endIdx <= firstLine.length) {
-                emit(idx to firstLine.subSequence(idx, endIdx).toSet())
+                emit(idx to firstLine.subSequence(idx, endIdx))
             }
         }
     }
@@ -31,12 +31,16 @@ fun searchMarkers(s: String, markerLength: Int = 4): Int =
         .first { (_, x) -> x.toSet().size == markerLength }
         .first + markerLength
 
-fun searchMarkersSet(p: Pair<Int, Set<Char>>, markerLength: Int = 4): Int? =
-    if (p.second.size == markerLength) {
-        p.first + markerLength
+fun searchMarkersSet(p: Pair<Int, CharSequence>): Int? = run {
+    val charSet = mutableSetOf<Char>()
+    // `Set<T>.add` returns a `Boolean` describing if it was added to the `Set<T>`.
+    // `Collection<T>.all` requires every entry to be true **and** short-circuits.
+    if (p.second.all { charSet.add(it) }) {
+        p.first
     } else {
         null
     }
+}
 
 @FlowPreview
 @ExperimentalCoroutinesApi
@@ -49,15 +53,15 @@ suspend fun daySix() {
 
     val partOneMarkerLength = 4
     val partOneResultLazier =
-        produceSets(path)
-            .first { searchMarkersSet(it, partOneMarkerLength) != null }
+        produceSets(path, partOneMarkerLength)
+            .first { searchMarkersSet(it) != null }
             .first + partOneMarkerLength
     println("Lazier 1: $partOneResultLazier")
 
     val partTwoMarkerLength = 14
     val partTwoResultLazier =
         produceSets(path, partTwoMarkerLength)
-            .first { searchMarkersSet(it, partTwoMarkerLength) != null }
+            .first { searchMarkersSet(it) != null }
             .first + partTwoMarkerLength
     println("Lazier 2: $partTwoResultLazier")
 }
