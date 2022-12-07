@@ -1,9 +1,11 @@
 package daySeven
 
-import arrow.fx.coroutines.*
+import arrow.fx.coroutines.parMap
 import cc.ekblad.konbini.*
 import flows.lines
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
 import kotlin.io.path.Path
 
@@ -12,21 +14,21 @@ object MoveToRoot : CommandLineAction()
 data class ChangeDirectory(val value: String) : CommandLineAction()
 object MoveUpDirectory : CommandLineAction()
 object ListDirectory : CommandLineAction()
-data class Directory(val directoryName: String) : CommandLineAction()
-data class File(val fileName: String, val fileSize: Int) : CommandLineAction()
+data class InsertDirectory(val directoryName: String) : CommandLineAction()
+data class InsertFile(val fileName: String, val fileSize: Int) : CommandLineAction()
 
 val parseFile = parser {
     val fileSize = integer()
     whitespace()
     val fileName = many1(char)
-    File(fileName.toString(), fileSize.toInt())
+    InsertFile(fileName.toString(), fileSize.toInt())
 }
 
 val parseDirectory = parser {
     string("dir")
     whitespace()
     val directoryName = many1(char)
-    Directory(directoryName.toString())
+    InsertDirectory(directoryName.toString())
 }
 
 val parseListDirectory = parser {
@@ -53,13 +55,22 @@ val parseCommandLineOutput = parser {
 }
 
 sealed class RoseTree<out T : Any>
+
+// terminal branch, i.e. `File`
+data class RoseLeaf<out T : Any>(val leaf: T) : RoseTree<T>()
+
+// non-terminal branch, i.e. `Directory`
 data class RoseNode<out T : Any>(val leaf: T, val node: List<RoseTree<T>>) : RoseTree<T>()
 
-data class RoseZipper<out T: Any>(
-    val focus: RoseNode<T>,
+data class RoseZipper<out T : Any>(
+    val focus: RoseTree<T>,
     val depth: Int,
-    val aboveFocus: RoseTree<T>?
+    val unfocused: RoseTree<T>?
 )
+
+sealed class FileOrDirectory
+data class File(val name: String) : FileOrDirectory()
+data class Directory(val name: String) : FileOrDirectory()
 
 @FlowPreview
 @ExperimentalCoroutinesApi
@@ -70,37 +81,41 @@ suspend fun daySeven() = coroutineScope {
         .toList()
     println(commandLineOutput)
 
-    val roseZipper = RoseZipper(
-        RoseNode("/", emptyList()), // initial empty root directory
-        0, // no subdirectories
-        null, // nothing above the root directory
-    )
+    val roseZipper: RoseZipper<FileOrDirectory> =
+        RoseZipper(
+            RoseNode(Directory("/"), emptyList()), // initial empty root directory
+            0, // no subdirectories
+            null, // nothing above the root directory
+        )
 
     // ChangeDirectory('hello')
-    val roseZipperAfterChangeDirectory =
+    val roseZipperAfterChangeDirectory: RoseZipper<FileOrDirectory> =
         RoseZipper(
-            RoseNode("hello", emptyList()),
+            RoseNode(Directory("hello"), emptyList()),
             1,
-            RoseNode("/", emptyList())
+            RoseNode(Directory("/"), emptyList())
         )
 
     // MoveUpDirectory && ChangeDirectory("world")
-    val roseZipperAfterActions =
+    val roseZipperAfterActions: RoseZipper<FileOrDirectory> =
         RoseZipper(
-            RoseNode("world", emptyList()),
+            RoseNode(Directory("world"), emptyList()),
             1,
-            RoseNode("/", listOf(RoseNode("hello", emptyList())))
+            RoseNode(Directory("/"), listOf(RoseNode(Directory("hello"), emptyList())))
         )
 
-    commandLineOutput.fold(roseZipper) { acc, p -> when (p) {
-        is ParserResult.Ok -> when (p.result) {
-            MoveToRoot -> acc
-            is ChangeDirectory -> acc
-            MoveUpDirectory -> acc
-            ListDirectory -> acc
-            is Directory -> acc
-            is File -> acc
+    commandLineOutput.fold(roseZipper) { acc, p ->
+        when (p) {
+            is ParserResult.Ok -> when (p.result) {
+                MoveToRoot -> acc
+                is ChangeDirectory -> acc
+                MoveUpDirectory -> acc
+                ListDirectory -> acc
+                is InsertDirectory -> acc
+                is InsertFile -> acc
+            }
+
+            is ParserResult.Error -> error("Something broke...")
         }
-        is ParserResult.Error -> error("Something broke...")
-    }}
+    }
 }
