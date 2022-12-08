@@ -87,7 +87,6 @@ suspend fun dayEight() {
                 acc.add(xs)
                 acc
             }
-    println("inputMatrix: $inputMatrix")
 
     val partOneResult = fullStencil(inputMatrix)
         .parMapUnordered { determineVisibility(it) }
