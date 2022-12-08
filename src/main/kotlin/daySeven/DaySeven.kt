@@ -55,12 +55,10 @@ val parseCommandLineOutput = parser {
 }
 
 sealed class RoseTree<out T : Any>
-
 // terminal branch, i.e. `File`
 data class RoseLeaf<out T : Any>(val leaf: T) : RoseTree<T>()
-
 // non-terminal branch, i.e. `Directory`
-data class RoseNode<out T : Any>(val leaf: T, val node: List<RoseTree<T>>) : RoseTree<T>()
+data class RoseNode<out T : Any>(val node: T, val braches: List<RoseTree<T>>) : RoseTree<T>()
 
 data class RoseZipper<out T : Any>(
     val focus: RoseTree<T>,
@@ -71,6 +69,33 @@ data class RoseZipper<out T : Any>(
 sealed class FileOrDirectory
 data class File(val name: String) : FileOrDirectory()
 data class Directory(val name: String) : FileOrDirectory()
+
+fun <T> identity(x: T): T = x
+
+fun <T: Any> RoseTree<T>.insertAtDepth(depth: Int, oldFocus: RoseTree<T>): Unit =
+    TODO()
+
+fun <T: Any> List<RoseTree<T>>.findFocus(focus: T): RoseTree<T>? =
+    this.find { x -> when (x) {
+        is RoseLeaf -> x.leaf == focus
+        is RoseNode -> x.node == focus
+    }}
+
+fun <T: Any> RoseZipper<T>.focus(leafOrNode: T) = run {
+    when (this.focus) {
+        is RoseLeaf -> this
+        is RoseNode ->
+            when (val newFocus = this.focus.braches.findFocus(leafOrNode)) {
+                is RoseLeaf -> this
+                is RoseNode -> run {
+                    // val newDepth: Int = this.depth + 1
+                    // val newUnfocused: Nothing = TODO()
+                    this
+                }
+                else -> this
+            }
+    }
+}
 
 @FlowPreview
 @ExperimentalCoroutinesApi
@@ -88,7 +113,7 @@ suspend fun daySeven() = coroutineScope {
             null, // nothing above the root directory
         )
 
-    // ChangeDirectory('hello')
+    // MkDir("hello") && ChangeDirectory("hello")
     val roseZipperAfterChangeDirectory: RoseZipper<FileOrDirectory> =
         RoseZipper(
             RoseNode(Directory("hello"), emptyList()),
