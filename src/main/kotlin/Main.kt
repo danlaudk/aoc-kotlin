@@ -1,9 +1,9 @@
-import dayEight.dayEight
+import dayNine.dayNine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 @FlowPreview
 @ExperimentalCoroutinesApi
 suspend fun main() {
-    dayEight()
+    dayNine()
 }
