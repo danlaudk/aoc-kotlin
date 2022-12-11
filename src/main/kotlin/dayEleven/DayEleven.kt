@@ -19,7 +19,7 @@ object Multiply : Operation()
 
 sealed class Part
 object PartOne : Part()
-object PartTwo : Part()
+data class PartTwo(val reducer: (BigInteger) -> BigInteger) : Part()
 
 @optics
 data class Monkey(
@@ -135,7 +135,7 @@ fun computeWorryLevel(monkey: Monkey, old: BigInteger): BigInteger = run {
     }
 }
 
-fun simulate(monkeys: List<Monkey>, part: Part, partTwoReducer: BigInteger): List<Monkey> =
+fun simulate(monkeys: List<Monkey>, part: Part): List<Monkey> =
     monkeys.indices.fold(monkeys) { acc, idx ->
         acc[idx].items.indices.fold(acc) { inner, _ ->
             // Separate the item from the Monkey
@@ -149,7 +149,7 @@ fun simulate(monkeys: List<Monkey>, part: Part, partTwoReducer: BigInteger): Lis
             // Throw the item
             val newWorryLevel = when (part) {
                 PartOne -> computeWorryLevel(monkeyThrows.first, monkeyThrows.second).div(3.toBigInteger())
-                PartTwo -> computeWorryLevel(monkeyThrows.first, monkeyThrows.second) % partTwoReducer
+                is PartTwo -> part.reducer(computeWorryLevel(monkeyThrows.first, monkeyThrows.second))
             }
             if (debug) {
                 println("[$idx]: new worry level $newWorryLevel")
@@ -179,17 +179,12 @@ suspend fun dayEleven() {
             .parMap { initializeMonkey(it) }
             .toList()
 
-    // I looked this up,
-    // The basic idea is you are normalizing your worry by the largest number
-    // divisible by all `worry.mod(divisibleBy) == 0`. Really clever.
-    val partTwoReducer = monkeys.map { it.divisibleBy }.reduce { x, y -> x * y }
-
     if (debug) {
         monkeys.forEach { println(it) }
     }
 
     val monkeysAfterPartOne = (0 until 20).fold(monkeys) { acc, _ ->
-        simulate(acc, PartOne, partTwoReducer)
+        simulate(acc, PartOne)
     }
     if (debug) {
         println()
@@ -203,8 +198,12 @@ suspend fun dayEleven() {
         .also { println("Part One: $it") }
 
     val totalRounds = 10000
+    // I looked this up,
+    // The basic idea is you are normalizing your worry by the largest number
+    // divisible by all `worry.mod(divisibleBy) == 0`. Really clever.
+    val maxDivisibleBy = monkeys.map { it.divisibleBy }.reduce { x, y -> x * y }
     val monkeysAfterPartTwo = (0 until totalRounds).fold(monkeys) { acc, _ ->
-        simulate(acc, PartTwo, partTwoReducer)
+        simulate(acc, PartTwo { it % maxDivisibleBy })
     }
     if (debug) {
         println()
