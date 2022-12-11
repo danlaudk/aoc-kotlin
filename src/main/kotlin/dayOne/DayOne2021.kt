@@ -34,7 +34,7 @@ suspend fun strictlyIncreasing(xs: List<String>) = run {
 suspend fun dayOne2021() = coroutineScope {
     val path = Path("inputFiles/dayOne2021.test.txt")
     val result =
-        windows(numElements = 2, step = 1, path)
+        windows(path)
             .parMapUnordered { strictlyIncreasing(it) }
             .fold(0) { acc, x -> acc + x }
     println("The final result is $result")

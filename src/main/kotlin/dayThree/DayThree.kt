@@ -51,7 +51,7 @@ suspend fun dayThree() {
     println("Part 1: $resultPartOne")
 
     val resultPartTwo =
-        windows(3, 3, path)
+        windows(path, numElements = 3)
             .parMapUnordered { elfGroupBadge(it) }
             .parMapUnordered { scoreCharacters(it) }
             .fold(0) { acc, x -> acc + x }
