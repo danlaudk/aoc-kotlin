@@ -61,7 +61,18 @@ class Grid<T>(private var rows: Int, private var cols: Int, data: List<T>) {
         if (idx == -1) {
             null
         } else {
-            val row = idx / this.rows
+            val row = idx / this.cols
+            val col = idx % this.cols
+            Point(row, col)
+        }
+    }
+
+    fun find(pred: (T) -> Boolean) = run {
+        val indexes = this.data.mapIndexedNotNull { idx, x ->
+            if (pred(x)) { idx } else { null }
+        }
+        indexes.map { idx ->
+            val row = idx / this.cols
             val col = idx % this.cols
             Point(row, col)
         }

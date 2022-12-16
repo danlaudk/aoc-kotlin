@@ -31,7 +31,7 @@ fun isEnd(currentHeight: Char, nextOption: Pair<Char, Point>?): Char? =
         }
     }
 
-fun searchPaths(matrix: Grid<Char>, startingPoint: Point, maxIterations: Long = 100): MutableMap<Long, List<Point>> {
+fun searchPaths(matrix: Grid<Char>, startingPoint: Point, maxIterations: Long = 100): MutableMap<Long, List<Point>>? {
     val result = mutableMapOf(0.toLong() to listOf(startingPoint))
     val visited = mutableSetOf<Point>()
 
@@ -101,7 +101,7 @@ fun searchPaths(matrix: Grid<Char>, startingPoint: Point, maxIterations: Long = 
         }
     }
     println("Max iterations reached...")
-    return result
+    return null
 }
 
 @FlowPreview
@@ -126,11 +126,22 @@ suspend fun dayTwelve() {
     // TODO: Something is wrong here...
     val startingPoint = matrix.first { it == 'S' }
     if (debug) {
-        matrix.display()
+        // matrix.display()
         println("The starting position is $startingPoint")
     }
+    // Part One
     startingPoint?.let { p ->
-        val paths = searchPaths(matrix, p, 1000)
-        println(paths)
+        searchPaths(matrix, p, 1000)
+            .also { println(it?.keys?.max()) }
     }
+
+    // Part Two
+    val startingPoints = matrix.find { it == 'a' }
+    if (debug) {
+        println("Starting points: $startingPoints")
+    }
+    startingPoints
+        .mapNotNull { p -> searchPaths(matrix, p, 10000) }
+        .minBy { it.keys.max() }
+        .also { println("Part two: ${it.keys.max()}") }
 }
