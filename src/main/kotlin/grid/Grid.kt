@@ -9,22 +9,18 @@ data class Point(val row: Int, val col: Int) {
     companion object
 }
 
-class Grid<T> {
-    private var rows: Int
-    private var cols: Int
+class Grid<T>(private var rows: Int, private var cols: Int, data: List<T>) {
     private val data: MutableList<T>
 
-    constructor(rows: Int, cols: Int, data: List<T>) {
+    init {
         if (rows * cols != data.size) {
             throw IncorrectGridDimensions("The data has size ${data.size} but you told me it was ${rows * cols}")
         }
-        this.rows = rows
-        this.cols = cols
         this.data = data.toMutableList()
     }
 
     private fun inBounds(p: Point): Boolean =
-        p.row < 0 || p.row > this.rows || p.col < 0 || p.col > this.cols
+        p.row < 0 || p.row >= this.rows || p.col < 0 || p.col >= this.cols
 
     private fun toIndex(p: Point): Int =
        this.cols * p.row + p.col
@@ -71,24 +67,32 @@ class Grid<T> {
         }
     }
 
-    fun up(p: Point): T? = run {
+    fun up(p: Point): Pair<T, Point>? = run {
         val up = Point.row.modify(p) { it - 1 }
-        this[up]
+        this[up]?.let {
+            it to up
+        }
     }
 
-    fun down(p: Point): T? = run {
+    fun down(p: Point): Pair<T, Point>? = run {
         val down = Point.row.modify(p) { it + 1 }
-        this[down]
+        this[down]?.let {
+            it to down
+        }
     }
 
-    fun left(p: Point): T? = run {
+    fun left(p: Point): Pair<T, Point>? = run {
         val left = Point.col.modify(p) { it - 1 }
-        this[left]
+        this[left]?.let {
+            it to left
+        }
     }
 
-    fun right(p: Point): T? = run {
+    fun right(p: Point): Pair<T, Point>? = run {
         val right = Point.col.modify(p) { it + 1 }
-        this[right]
+        this[right]?.let {
+            it to right
+        }
     }
 
     fun rows() = run {
