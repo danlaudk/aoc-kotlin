@@ -19,8 +19,7 @@ val parseChars: Parser<List<Char>> = parser {
 fun isAscendingHeight(currentHeight: Char, nextOption: Pair<Char, Point>?): Boolean =
     nextOption?.let { p ->
         (currentHeight == 'S' && p.first == 'a')
-                || currentHeight.plus(1) == p.first
-                || currentHeight == p.first
+                || currentHeight.plus(1) >= p.first
     } ?: false
 
 fun isEnd(currentHeight: Char, nextOption: Pair<Char, Point>?): Char? =
@@ -124,14 +123,14 @@ suspend fun dayTwelve() {
     }
 
     val matrix = Grid(rows, cols, rawInput.flatten())
+    // TODO: Something is wrong here...
     val startingPoint = matrix.first { it == 'S' }
     if (debug) {
-        // matrix.display()
+        matrix.display()
         println("The starting position is $startingPoint")
     }
     startingPoint?.let { p ->
-        val paths = searchPaths(matrix, p, 1000000000000)
-        println(paths[paths.keys.max()])
-        println(paths.keys.max())
+        val paths = searchPaths(matrix, p, 1000)
+        println(paths)
     }
 }
