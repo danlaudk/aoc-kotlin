@@ -1,5 +1,7 @@
 package dayTen
 
+import arrow.core.Either
+import arrow.core.Either.*
 import arrow.fx.coroutines.parMap
 import arrow.optics.optics
 import cc.ekblad.konbini.*
@@ -118,20 +120,35 @@ fun displayScreen(input: List<List<Char>>) = run {
 @FlowPreview
 @ExperimentalCoroutinesApi
 suspend fun dayTen() {
-    val path = Path("inputFiles/dayTen.txt")
+    val path = Path("inputFiles/dayTenErrors.txt")
     lines(path)
         .parMap { l ->
             when (val r = operationsParser.parse(l)) {
-                is ParserResult.Ok -> r.result
-                is ParserResult.Error -> throw Error("Unable to parse $l as operation")
+                is ParserResult.Ok -> Either.Right(r.result)
+                is ParserResult.Error -> Either.Left("Unable to parse $l as operation")
+//                is ParserResult.Error -> throw Error("Unable to parse $l as operation")
             }
         }
-        .fold(ExecutionState()) { acc, op ->
-            when (op) {
-                Noop -> noop(acc)
-                is AddX -> addX(acc, op)
+        .fold(ExecutionState()) { acc, eitherOp: Either<String, Operations> ->
+            println("op is $eitherOp")
+            when (eitherOp) {
+                is Right<Operations> -> {
+                    when (val op = eitherOp.value) {
+                        is Noop -> noop(acc)
+                        is AddX -> addX(acc, op)
+                    }
+                }
+
+                is Left<String> -> {
+                    println("Error: $eitherOp")
+                    acc
+                }
+//                is Either.Right -> when(val )
+//                Either.
+//                else ->
             }
         }
+
         .also { r ->
             val totalSignal = r.signal.fold(0) { acc: Int, x: Int -> acc + x }
             println("Total signal is $totalSignal")
