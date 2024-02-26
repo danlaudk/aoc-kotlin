@@ -37,9 +37,8 @@ tasks.test {
 tasks.withType<KotlinCompile>().configureEach() { //
     kotlinOptions {
         jvmTarget = "17"  // ?
+        freeCompilerArgs += "-Xcontext-receivers"
     }
-
-    kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
 }
 
 application {
