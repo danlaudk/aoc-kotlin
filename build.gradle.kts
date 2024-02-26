@@ -34,9 +34,9 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
-tasks.withType<KotlinCompile>().all {
+tasks.withType<KotlinCompile>().configureEach() { //
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"  // ?
     }
 
     kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
