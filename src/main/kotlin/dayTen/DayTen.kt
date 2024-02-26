@@ -11,10 +11,23 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.fold
 import kotlin.io.path.Path
 
+
+import arrow.core.raise.NullableRaise
+import arrow.core.raise.OptionRaise
+import arrow.core.raise.Raise
+import arrow.core.raise.ResultRaise
+import arrow.core.raise.catch
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.raise.fold
+import arrow.core.raise.mapOrAccumulate
+import arrow.core.raise.nullable
+import arrow.core.raise.option
+import arrow.core.raise.withError
 const val debug = false
 
 sealed class Operations
-object Noop : Operations()
+data object Noop : Operations()
 data class AddX(val value: Int) : Operations()
 
 val noopParser = parser {
@@ -52,21 +65,21 @@ fun ExecutionState.signalStrength(): Int? =
         null
     }
 
-fun tick(executionState: ExecutionState): ExecutionState = run {
-    val result = ExecutionState.ticks.modify(executionState) { it + 1 }
-    // Determine if we should append signal strength
-    result.signalStrength()?.let { strength ->
-        ExecutionState.signal.modify(result) { it + listOf(strength) }
-    } ?: result
-}
+fun tick(executionState: ExecutionState): ExecutionState =
+    ExecutionState.ticks.modify(executionState) { it + 1 }
+//    val result = ExecutionState.ticks.modify(executionState) { it + 1 }
+// // Determine if we should append signal strength
+//    result.signalStrength()?.let { strength ->
+//        ExecutionState.signal.modify(result) { it + listOf(strength) }
+//    } ?: result
 
 fun <T> List<List<T>>.appendList(l: List<T>): List<List<T>> = this + listOf(l)
 
 fun writeSprite(horizontalPosition: Int, sprite: List<Int>, executionState: ExecutionState): ExecutionState =
     if (horizontalPosition in sprite) {
-        ExecutionState.crtBuffer.modify(executionState) { it + listOf('#') }
+        ExecutionState.crtBuffer.modify(executionState) { it + listOf('@') }
     } else {
-        ExecutionState.crtBuffer.modify(executionState) { it + listOf('.') }
+        ExecutionState.crtBuffer.modify(executionState) { it + listOf(' ') }
     }
 
 fun writeBufferToScreen(executionState: ExecutionState) =
@@ -117,19 +130,26 @@ fun displayScreen(input: List<List<Char>>) = run {
     }
 }
 
+fun parseCustomError(input: String): Either<ParseError, Operations> =
+    when (val r = operationsParser.parse(input)) {
+        is ParserResult.Ok -> Either.Right(r.result)
+        is ParserResult.Error -> Either.Left(ParseError("Unable to parse. $r "))
+//                is ParserResult.Error -> throw Error("Unable to parse $l as operation")
+    }
+
+context (Raise<ParseError>)
+fun parseCustomErrorWithRaise(input: String): Operations = parseCustomError(input).bind()
+
+
 @FlowPreview
 @ExperimentalCoroutinesApi
 suspend fun dayTen() {
     val path = Path("inputFiles/dayTenErrors.txt")
     lines(path)
-        .parMap { l ->
-            when (val r = operationsParser.parse(l)) {
-                is ParserResult.Ok -> Either.Right(r.result)
-                is ParserResult.Error -> Either.Left("Unable to parse $l as operation")
-//                is ParserResult.Error -> throw Error("Unable to parse $l as operation")
-            }
+        .parMap {
+            parseCustomError(it)
         }
-        .fold(ExecutionState()) { acc, eitherOp: Either<String, Operations> ->
+        .fold(ExecutionState()) { acc, eitherOp: Either<ParseError, Operations> ->
             println("op is $eitherOp")
             when (eitherOp) {
                 is Right<Operations> -> {
@@ -139,7 +159,7 @@ suspend fun dayTen() {
                     }
                 }
 
-                is Left<String> -> {
+                is Left<ParseError> -> {
                     println("Error: $eitherOp")
                     acc
                 }
@@ -155,3 +175,7 @@ suspend fun dayTen() {
             println(displayScreen(r.screen))
         }
 }
+
+sealed interface LogicalError
+data class ParseError(val message: String) : LogicalError
+data object InvalidInputError : LogicalError

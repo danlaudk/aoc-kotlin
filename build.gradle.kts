@@ -1,7 +1,9 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
-    kotlin("jvm") version "1.7.21"
+    kotlin("jvm") version "1.9.0"
     application
-    id("com.google.devtools.ksp") version "1.7.21-1.0.8"
+    id("com.google.devtools.ksp") version "1.9.0-1.0.13"
     idea
 }
 
@@ -15,10 +17,10 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation("io.arrow-kt:arrow-fx-coroutines:1.1.2")
+    implementation("io.arrow-kt:arrow-fx-coroutines:1.2.0")
     implementation("cc.ekblad.konbini:konbini:0.1.3")
 
-    implementation(platform("io.arrow-kt:arrow-stack:1.1.3"))
+    implementation(platform("io.arrow-kt:arrow-stack:1.2.0"))
     implementation("io.arrow-kt:arrow-core")
     implementation("io.arrow-kt:arrow-optics")
     ksp("io.arrow-kt:arrow-optics-ksp-plugin:1.1.3")
@@ -31,6 +33,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+tasks.withType<KotlinCompile>().all {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+
+    kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
 }
 
 application {
