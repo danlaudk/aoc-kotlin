@@ -10,6 +10,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.fold
 import kotlin.io.path.Path
 import arrow.core.raise.Raise
+import kotlinx.coroutines.flow.map
 
 const val debug = false
 
@@ -131,12 +132,10 @@ context (Raise<ParseError>)
 fun parseCustomErrorWithRaise(input: String): Operations = parseCustomError(input).bind()
 
 context (Raise<ParseError>)
-@FlowPreview
-@ExperimentalCoroutinesApi
 suspend fun dayTen() {
     val path = Path("inputFiles/dayTenErrors.txt")
     lines(path)
-        .parMap {
+        .map {
             parseCustomErrorWithRaise(it)
         }
         .fold(ExecutionState()) { acc, op: Operations ->
