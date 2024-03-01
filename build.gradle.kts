@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.9.0"
+    kotlin("jvm") version "1.9.22"
     application
-    id("com.google.devtools.ksp") version "1.9.0-1.0.13"
+    id("com.google.devtools.ksp") version "1.9.22-1.0.17"
     idea
 }
 
@@ -16,14 +16,14 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation("io.arrow-kt:arrow-fx-coroutines:1.2.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation("io.arrow-kt:arrow-fx-coroutines:1.2.3")
     implementation("cc.ekblad.konbini:konbini:0.1.3")
 
-    implementation(platform("io.arrow-kt:arrow-stack:1.2.0"))
+    implementation(platform("io.arrow-kt:arrow-stack:1.2.3"))
     implementation("io.arrow-kt:arrow-core")
     implementation("io.arrow-kt:arrow-optics")
-    ksp("io.arrow-kt:arrow-optics-ksp-plugin:1.1.3")
+    ksp("io.arrow-kt:arrow-optics-ksp-plugin:1.2.3")
 
     testImplementation(kotlin("test"))
     testImplementation("io.kotest:kotest-runner-junit5:5.5.4")
