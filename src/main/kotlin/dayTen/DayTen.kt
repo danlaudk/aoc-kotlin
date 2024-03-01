@@ -18,6 +18,12 @@ sealed class Operations
 data object Noop : Operations()
 data class AddX(val value: Int) : Operations()
 
+
+sealed class LogicalError
+data class ParseError(val message: String) : LogicalError()
+data object InvalidInputError : LogicalError()
+
+
 val noopParser = parser {
     string("noop")
     Noop
@@ -34,16 +40,18 @@ val operationsParser: Parser<Operations> = parser {
     oneOf(noopParser, addXParser)
 }
 
-fun noop(executionState: ExecutionState): ExecutionState = run {
+fun noop(executionState: ExecutionState): ExecutionState {
     val result = tick(executionState)
-    pixel(result)
+    return pixel(result)
 }
 
-fun addX(executionState: ExecutionState, addX: AddX): ExecutionState = run {
+fun addX(executionState: ExecutionState, addX: AddX): ExecutionState {
     val firstTick = pixel(tick(executionState))
     val secondTick = pixel(tick(firstTick))
-    ExecutionState.value.modify(secondTick) { it + addX.value }
+
+    return ExecutionState.value.modify(secondTick) { it + addX.value }
 }
+
 @optics
 data class ExecutionState(
     val ticks: Int = 0,
@@ -67,6 +75,7 @@ null
 
 fun tick(executionState: ExecutionState): ExecutionState =
     ExecutionState.ticks.modify(executionState) { it + 1 }
+
 /** val result = ExecutionState.ticks.modify(executionState) { it + 1 }
 // // Determine if we should append signal strength
 //    result.signalStrength()?.let { strength ->
@@ -74,17 +83,19 @@ fun tick(executionState: ExecutionState): ExecutionState =
 //    } ?: result
 **/
 
-fun pixel(executionState: ExecutionState): ExecutionState = run {
+fun pixel(executionState: ExecutionState): ExecutionState {
     // If our current horizontal position overlaps with the register value:
     // write out '#', else '.'
     val horizontalPosition = (executionState.ticks - 1) % 40
     val sprite = listOf(executionState.value - 1, executionState.value, executionState.value + 1)
     val withBufferUpdate = pixelTheSprite(horizontalPosition, sprite, executionState)
+
     if (debug) {
         println("before: $executionState after: $withBufferUpdate")
     }
+
     // If we have a finished the line/crtBuffer, write to screen. else nothing
-    writeLineToScreenBuffer(withBufferUpdate)
+    return writeLineToScreenBuffer(withBufferUpdate)
 //    if (debug) {
 //        println("$sprite $horizontalPosition $withScreenUpdate")
 //    }
@@ -92,23 +103,26 @@ fun pixel(executionState: ExecutionState): ExecutionState = run {
 }
 
 // If our current horizontal position overlaps with the register value, pixelthesprite
-fun pixelTheSprite(horizontalPosition: Int, sprite: List<Int>, executionState: ExecutionState): ExecutionState =
-    if (horizontalPosition in sprite) {
-        ExecutionState.crtBuffer.modify(executionState) { it + listOf('@') }
+fun pixelTheSprite(horizontalPosition: Int, sprite: List<Int>, executionState: ExecutionState): ExecutionState {
+    return if (horizontalPosition in sprite) {
+        ExecutionState.crtBuffer.modify(executionState) { it + listOf('@') } // wrap in function
     } else {
         ExecutionState.crtBuffer.modify(executionState) { it + listOf(' ') }
     }
+}
 
-fun writeLineToScreenBuffer(executionState: ExecutionState) =
-    if (executionState.crtBuffer.size == 40) {
+fun writeLineToScreenBuffer(executionState: ExecutionState): ExecutionState {
+    return if (executionState.crtBuffer.size == 40) {
         val withScreenWrite = ExecutionState.screen.modify(executionState) { it.appendList(executionState.crtBuffer) }
         ExecutionState.crtBuffer.modify(withScreenWrite) { emptyList() }
     } else {
         executionState
     }
+}
+
 fun <T> List<List<T>>.appendList(l: List<T>): List<List<T>> = this + listOf(l)
 
-fun displayScreen(input: List<List<Char>>) = run {
+fun displayScreen(input: List<List<Char>>) {
     val columns = 40
     val rows = 6
     (0 until rows).forEach { row ->
@@ -119,46 +133,62 @@ fun displayScreen(input: List<List<Char>>) = run {
     }
 }
 
-
-
-fun parseCustomError(input: String): Either<ParseError, Operations> =
-    when (val r = operationsParser.parse(input)) {
+fun parseCustomError(input: String): Either<ParseError, Operations> {
+    return when (val r = operationsParser.parse(input)) {
         is ParserResult.Ok -> Either.Right(r.result)
         is ParserResult.Error -> Either.Left(ParseError("Unable to parse. $r "))
 //                is ParserResult.Error -> throw Error("Unable to parse $l as operation")
     }
+}
 
 context (Raise<ParseError>)
 fun parseCustomErrorWithRaise(input: String): Operations = parseCustomError(input).bind()
 
-context (Raise<ParseError>)
-suspend fun dayTen() {
-    val path = Path("inputFiles/dayTenErrors.txt")
+suspend fun dayTenExplicit() {
+    val path = Path("inputFiles/dayTen.txt")
     lines(path)
-        .map {
-            parseCustomErrorWithRaise(it)
-        }
-        .fold(ExecutionState()) { acc, op: Operations ->
+        .map { parseCustomError(it) }
+        .fold(ExecutionState()) { acc, op: Either<ParseError, Operations> ->
+            when(op) {
+                is Either.Right -> op.value
+            }
+
+
             println("op is $op")
             when (op) {
-                is Noop -> noop(acc)
-                is AddX -> addX(acc, op)
+                is Either.Left -> {
+                    is Noop -> noop(acc)
+                    is AddX -> addX(acc, op)
+                }
+            }
+        }
+        .also { println(displayScreen(it.screen)) }
+}
+
+
+context (Raise<ParseError>)
+suspend fun dayTen() {
+    val path = Path("inputFiles/dayTen.txt")
+    lines(path)
+        .map {
+            parseCustomErrorWithRaise(it) // with map and parMap, does this shortcircuti up to dayTen?
+        }
+        .fold(ExecutionState()) { acc, op: Either<ParseError, Operations> ->
+            println("op is $op")
+            when (op) {
+                is Either.Left -> {
+                    is Noop -> noop(acc)
+                    is AddX -> addX(acc, op)
             }
         }
         //                now we  don't need this as we handle the error at the parse stage of the code
         //                is Left<ParseError> -> {
         //                    println("Error: $eitherOp")
         //                    acc
-        //                }
-            /** Signalstrength
+        }
         .also { r ->
-            val totalSignal = r.signal.fold(0) { acc: Int, x: Int -> acc + x }
-            println("Total signal is $totalSignal")
+//            val totalSignal = r.signal.fold(0) { acc: Int, x: Int -> acc + x }
+//            println("Total signal is $totalSignal")
             println(displayScreen(r.screen))
-        }**/
+        }
 }
-
-
-sealed interface LogicalError
-data class ParseError(val message: String) : LogicalError
-data object InvalidInputError : LogicalError

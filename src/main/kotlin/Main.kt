@@ -12,16 +12,16 @@ suspend fun main() {
 //    dayTen.dayTen()
 }
 
-fun makeExplicit() {
-    val raiseContext = object : Raise<ParseError> {}
-
-    runBlocking {
-//        assert(this is CoroutineScope)
-
-        with(raiseContext) {
-            assert(this is Raise<ParseError>)
-
-            dayTen()
-        }
-    }
-}
+//fun makeExplicit() {
+//    val raiseContext = object : Raise<ParseError> {}
+//
+//    runBlocking {
+////        assert(this is CoroutineScope)
+//
+//        with(raiseContext) {
+//            assert(this is Raise<ParseError>)
+//
+//            dayTen()
+//        }
+//    }
+//}
